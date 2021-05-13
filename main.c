@@ -1,12 +1,13 @@
 #include <stdbool.h>
 #include <stdio.h>
-#include <string.h>
 
 
 int main()
 {
 	char c;
 	bool oneAlready = false;
+	long int curPos;
+	int charsToRemove = 2;
 	
 	FILE* f = fopen("test.c", "r+");
 	
@@ -15,9 +16,20 @@ int main()
 		if (c == '/')
 		{
 			if (oneAlready)
-				putc(
+			{
+				while ((c = getc(f)) != '\n')
+					charsToRemove++;
+					
+				curPos = ftell(f);
+				fseek(f, curPos - charsToRemove - 1, SEEK_SET);
+				
+				for (int i = 0; i < charsToRemove; i++)
+					fprintf(f, " ");
+				oneAlready = false; continue;
+			}
 			oneAlready = true;
-		}	
+		}
 	}		
+	fclose(f);
 	return 0;
 }
