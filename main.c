@@ -1,13 +1,16 @@
 #include <stdbool.h>
 #include <stdio.h>
+#define COM_CHARS_AMOUNT 2  // amount of comment chars (// and /* are two chars in length)
 
 
 int main()
 {
 	char c;
-	bool oneAlready = false;
-	long int curPos;
-	int charsToRemove = 2;
+	bool firstSlashWasMet = false, firstAsterWasMet = false;
+	bool secAsterWasMet = false, secSlashWasMet = false;
+	bool isEndOfComment = false;
+	long int curPos, firstSlashPos, firstAsterPos, secSlashPos, secAsterPos;
+	int charsToRemove = COM_CHARS_AMOUNT;
 	
 	FILE* f = fopen("test.c", "r+");
 	
@@ -15,19 +18,55 @@ int main()
 	{
 		if (c == '/')
 		{
-			if (oneAlready)
+			if (firstSlashWasMet)
 			{
-				while ((c = getc(f)) != '\n')
+				secSlashPos = ftell(f);
+				if (secSlashPos - firstSlashPos == 1)
+				{			
+					while ((c = getc(f)) != '\n')
+						charsToRemove++;
+						
+					fseek(f, firstSlashPos - 1, SEEK_SET);
+					for (int i = 0; i < charsToRemove; i++)
+						fprintf(f, " ");
+						
+					firstSlashWasMet = false;
+					charsToRemove = COM_CHARS_AMOUNT;
+					continue;
+				}
+				continue;
+			}
+			firstSlashWasMet = true;
+			firstSlashPos = ftell(f);
+			continue;
+		}
+		if (c == '*' && firstSlashWasMet)
+		{
+			firstAsterPos = ftell(f);
+			if (firstAsterPos - firstSlashPos == 1)
+			{
+				fseek(f, firstAsterPos, SEEK_SET);
+				while (!isEndOfComment && ((c = getc(f)) != EOF))
+				{
+					if (c == '*')
+					{
+						secAsterWasMet = true;
+						secAsterPos = ftell(f);
+					}
+					if (c == '/' && secAsterWasMet)
+					{
+						secSlashPos = ftell(f);
+						if (secSlashPos - secAsterPos == 1)
+							isEndOfComment = true;
+					}
 					charsToRemove++;
-					
-				curPos = ftell(f);
-				fseek(f, curPos - charsToRemove - 1, SEEK_SET);
+				}
+				fseek(f, firstSlashPos - 1, SEEK_SET);
 				
 				for (int i = 0; i < charsToRemove; i++)
 					fprintf(f, " ");
-				oneAlready = false; continue;
+				charsToRemove = COM_CHARS_AMOUNT;
 			}
-			oneAlready = true;
 		}
 	}		
 	fclose(f);
