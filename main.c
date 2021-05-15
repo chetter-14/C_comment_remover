@@ -6,8 +6,7 @@
 int main()
 {
 	char c;
-	bool firstSlashWasMet = false, firstAsterWasMet = false;
-	bool secAsterWasMet = false, secSlashWasMet = false;
+	bool firstSlashWasMet = false, secAsterWasMet = false;
 	bool isEndOfComment = false;
 	long int curPos, firstSlashPos, firstAsterPos, secSlashPos, secAsterPos;
 	int charsToRemove = COM_CHARS_AMOUNT;
@@ -34,6 +33,7 @@ int main()
 					charsToRemove = COM_CHARS_AMOUNT;
 					continue;
 				}
+				firstSlashPos = secSlashPos;
 				continue;
 			}
 			firstSlashWasMet = true;
@@ -46,7 +46,7 @@ int main()
 			if (firstAsterPos - firstSlashPos == 1)
 			{
 				fseek(f, firstAsterPos, SEEK_SET);
-				while (!isEndOfComment && ((c = getc(f)) != EOF))
+				while ((c = getc(f)) != EOF && !isEndOfComment)
 				{
 					if (c == '*')
 					{
@@ -58,6 +58,7 @@ int main()
 						secSlashPos = ftell(f);
 						if (secSlashPos - secAsterPos == 1)
 							isEndOfComment = true;
+						secAsterWasMet = false;
 					}
 					charsToRemove++;
 				}
@@ -66,7 +67,9 @@ int main()
 				for (int i = 0; i < charsToRemove; i++)
 					fprintf(f, " ");
 				charsToRemove = COM_CHARS_AMOUNT;
+				isEndOfComment = false;
 			}
+			firstSlashWasMet = false;
 		}
 	}		
 	fclose(f);
